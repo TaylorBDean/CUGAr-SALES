@@ -1,0 +1,7 @@
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "archMap": [],
+  "syscalls": [
+    {"names": ["read", "write", "exit", "futex"], "action": "SCMP_ACT_ALLOW", "args": []}
+  ]
+}

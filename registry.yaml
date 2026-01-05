@@ -1,0 +1,53 @@
+# Example/Development Registry
+# 
+# THIS IS NOT THE CANONICAL REGISTRY
+# The canonical, production-ready registry is located at: docs/mcp/registry.yaml
+#
+# This file serves as a minimal example for development and testing purposes.
+# For production deployments, compose/imports, and full tool definitions, see docs/mcp/registry.yaml
+
+version: v1
+defaults:
+  tier: 1
+  enabled: false  # Development examples disabled by default
+  protocol: mcp
+
+# Example servers for local development
+servers:
+  mock_filesystem:
+    url: http://localhost:8001
+    schema: http://localhost:8001/openapi.json
+    enabled_env: ENABLE_FILESYSTEM_MCP
+    tools:
+      - capability: "Filesystem"
+        action: "Read contacts"
+        operation_id: "readContacts"
+        description: "Read contact list from workspace files"
+        cost: 1.0
+        latency: 1.0
+  mock_crm:
+    url: http://localhost:8002
+    schema: http://localhost:8002/openapi.json
+    enabled: true
+    enabled_env: ENABLE_CRM_MCP
+    tools:
+      - capability: "CRM"
+        action: "Fetch contacts"
+        operation_id: "fetchContacts"
+        description: "Retrieve CRM contacts"
+        cost: 1.2
+        latency: 1.5
+
+local_tools:
+  - id: python_code_interpreter
+    name: "Python Code Interpreter"
+    description: "Executes Python code in a secure, sandboxed environment."
+    sandbox: "code-secure"
+
+sandbox_policies:
+  - id: "code-secure"
+    type: "subprocess"
+    description: "A secure, subprocess-based Python sandbox with hard resource limits."
+    max_cpu_time: "5s"
+    max_memory: "128MB"
+    max_wall_clock_time: "30s"

@@ -1,0 +1,14 @@
+api_keys:
+  clearbit: YOUR_CLEARBIT_API_KEY
+  apollo: YOUR_APOLLO_API_KEY
+  zoominfo: YOUR_ZOOMINFO_API_KEY
+
+endpoints:
+  clearbit: https://api.clearbit.com/v2/companies/find
+  apollo: https://api.apollo.io/v1/mixed
+  zoominfo: https://api.zoominfo.com/v1/companies
+
+settings:
+  enrichment_enabled: true
+  default_timeout: 5000  # in milliseconds
+  retry_attempts: 3

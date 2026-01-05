@@ -1,0 +1,161 @@
+version: "3.9"
+
+services:
+  orchestrator:
+    # Pinned version per AGENTS.md § 3 (no :latest in production)
+    # TODO: Replace with digest once v0.2.0 is tested and released
+    image: cuga/orchestrator:v0.2.0
+    env_file:
+      - ./ops/env/orchestrator.env
+      - ./ops/env/observability.env
+    environment:
+      # Registry + profile
+      # REGISTRY_PATH: "/app/registry.yaml"
+      # WEB_SERVICE: "mcp.web-slim" # switch to mcp.web-full when needed
+      # Observability/budgets (see docs/observability/config.md)
+      # AGENT_TRACE_SAMPLE_RATE: "0.1"
+      # AGENT_TRACE_MAX_LATENCY_MS: "5000"
+      # AGENT_TOOL_MAX_LATENCY_MS: "tool=3000,search=2000"
+      # AGENT_RUN_BUDGET_USD: "5"
+      # AGENT_DAILY_BUDGET_USD: "20"
+      # AGENT_BUDGET_ENFORCE: "warn"
+      # LANGFUSE_HOST: "http://langfuse:3000"
+      # LANGFUSE_PUBLIC_KEY: ""
+      # LANGFUSE_SECRET_KEY: ""
+      # LANGCHAIN_TRACING_V2: "off"
+      # LANGCHAIN_ENDPOINT: "https://api.smith.langchain.com"
+      # LANGCHAIN_API_KEY: ""
+      # LANGCHAIN_PROJECT: "cugar"
+      # OTEL_EXPORTER_OTLP_ENDPOINT: "http://observability:4318"
+      # OTEL_EXPORTER_OTLP_HEADERS: ""
+    volumes:
+      - ./docs/mcp/registry.yaml:/app/registry.yaml:ro
+      - ./src/cuga/settings.toml:/app/settings.toml:ro
+      - ./workspace/output:/app/output:rw
+    depends_on:
+      - mcp.e2b
+      - mcp.fs
+      - ${WEB_SERVICE:-mcp.web-slim}
+      - mcp.vcs
+      - mcp.gitingest
+      - ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  mcp.e2b:
+    # Pinned version per AGENTS.md § 3 (no :latest in production)
+    image: e2b/mcp:v1.0.0
+    profiles: ["tier1"]
+    environment:
+      # E2B_API_KEY: ""
+    volumes:
+      - ./workspace:/workdir:ro
+      - ./workspace/output:/workdir/output:rw
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 60s
+
+  mcp.fs:
+    # Pinned version per AGENTS.md § 3
+    image: fastmcp/filesystem:v1.0.0
+    profiles: ["tier1"]
+    volumes:
+      - ./workspace:/workspace:ro
+      - ./workspace/output:/workspace/output:rw
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 60s
+
+  mcp.web-slim:
+    # Pinned version per AGENTS.md § 3
+    image: fastmcp/browser:v1.0.0
+    profiles: ["tier1"]
+    environment:
+      # BROWSER_API_KEY: ""
+      # SEARCH_API_KEY: ""
+      WEB_PROFILE: "node-slim"
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 60s
+
+  mcp.web-full:
+    # Pinned version per AGENTS.md § 3
+    image: fastmcp/browser:v1.0.0
+    profiles: ["web-full"]
+    environment:
+      # BROWSER_API_KEY: ""
+      # SEARCH_API_KEY: ""
+      WEB_PROFILE: "node-full"
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 60s
+
+  mcp.vcs:
+    # Pinned version per AGENTS.md § 3
+    image: fastmcp/git:v2.0.0
+    profiles: ["tier1"]
+    volumes:
+      - ./workspace/repos:/workspace/repos:rw
+    read_only: true
+    healthcheck:
+      test: ["CMD", "git", "--version"]
+      interval: 60s
+
+  mcp.gitingest:
+    # Pinned version per AGENTS.md § 3
+    image: fastmcp/gitingest:v1.0.0
+    profiles: ["tier1"]
+    volumes:
+      - ./workspace/repos:/workspace/repos:ro
+    read_only: true
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 60s
+
+  observability:
+    # Pinned version per AGENTS.md § 3
+    image: otel/opentelemetry-collector:0.91.0
+    profiles: ["tier2"]
+    command: ["--config=/etc/otel/config.yaml"]
+    environment:
+      # OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      # OTEL_EXPORTER_OTLP_HEADERS: ""
+    volumes:
+      - ./ops/otel-config.yaml:/etc/otel/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "otelcol", "--version"]
+      interval: 60s
+
+  vector-db:
+    # Pinned version per AGENTS.md § 3
+    image: qdrant/qdrant:v1.7.0
+    profiles: ["tier2"]
+    environment:
+      # VECTOR_URL: "http://vector-db:6333"
+    volumes:
+      - ./workspace/vector:/qdrant/storage:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 60s
+
+  ollama:
+    # Pinned version per AGENTS.md § 3
+    image: ollama/ollama:0.1.17
+    profiles: ["local-llm"]
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  ollama-models:

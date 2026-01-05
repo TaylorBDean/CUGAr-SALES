@@ -1,0 +1,31 @@
+permissions:
+  - read: true
+  - write: true
+  - execute: false
+
+compliance:
+  - data_privacy: true
+  - anti_spam: true
+  - consent_required: true
+
+guardrails:
+  - max_email_sends_per_day: 200
+  - max_follow_up_attempts: 3
+  - lead_scoring_threshold: 75
+
+audit:
+  - log_all_actions: true
+  - retain_logs_for_days: 90
+
+escalation:
+  - human_in_the_loop: true
+  - high_risk_deals: true
+
+training:
+  - continuous_learning: true
+  - feedback_loops: true
+
+monitoring:
+  - performance_metrics: true
+  - conversion_rates: true
+  - user_feedback: true

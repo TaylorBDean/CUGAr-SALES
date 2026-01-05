@@ -1,0 +1,9 @@
+servers:
+  local_files:
+    url: ${oc.env:LOCAL_FILES_URL, "http://localhost:8090"}
+    enabled: false
+    tools:
+      - name: list_files
+        operation_id: listFiles
+        method: GET
+        path: /files

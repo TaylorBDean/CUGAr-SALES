@@ -1,0 +1,317 @@
+# Canonical MCP registry (short IDs, Tier 1 default-on, Tier 2 opt-in)
+# enabled=false entries are ignored at load time even if present in compose
+version: v1
+defaults:
+  tier: 1
+  enabled: true
+  protocol: mcp
+  sandbox: py-slim
+  scopes: []
+  env:
+    AGENT_BUDGET_CEILING: ${AGENT_BUDGET_CEILING:-100}
+    AGENT_ESCALATION_MAX: ${AGENT_ESCALATION_MAX:-2}
+    AGENT_BUDGET_POLICY: ${AGENT_BUDGET_POLICY:-warn}
+    OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-cuga}
+    LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+    LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+    TRACELOOP_API_KEY: ${TRACELOOP_API_KEY:-}
+  mounts: []
+  budget_policy: warn
+
+# ===================================================================
+# SALES CAPABILITIES (Tier 1 - Offline-First, Vendor-Neutral)
+# ===================================================================
+#
+# Design Principles:
+# - Capability-first (not vendor-specific)
+# - Offline-first (no network by default)
+# - Deterministic inputs/outputs
+# - READ-ONLY or "propose-only" by default
+# - All execution-class operations require approval
+# - Trace-ID propagation for observability
+# - Budget enforcement per AGENTS.md
+#
+# Organized by canonical core domain:
+# 1. Territory & Capacity Planning
+# 2. Account & Prospect Intelligence
+# 3. Product & Knowledge Enablement (Phase 2)
+# 4. Outreach & Engagement (Phase 3)
+# 5. Qualification & Deal Progression
+# 6. Analytics, Learning & Governance (Phase 4)
+# ===================================================================
+
+sales_capabilities:
+  # Domain 1: Territory & Capacity Planning
+  - id: sales.simulate_territory_change
+    name: "Simulate Territory Change"
+    module: cuga.modular.tools.sales.territory
+    handler: simulate_territory_change
+    description: "Simulate territory reassignment impact (READ-ONLY, requires approval)"
+    sandbox: py-slim
+    scopes: [sales, planning]
+    network_allowed: false
+    classification: read_only
+    requires_approval: true
+    cost: 1.0
+    latency: 0.5
+    
+  - id: sales.assess_capacity_coverage
+    name: "Assess Capacity Coverage"
+    module: cuga.modular.tools.sales.territory
+    handler: assess_capacity_coverage
+    description: "Assess territory capacity and coverage gaps (READ-ONLY)"
+    sandbox: py-slim
+    scopes: [sales, planning]
+    network_allowed: false
+    classification: read_only
+    requires_approval: false
+    cost: 1.0
+    latency: 0.5
+    
+  # Domain 2: Account & Prospect Intelligence
+  - id: sales.normalize_account_record
+    name: "Normalize Account Record"
+    module: cuga.modular.tools.sales.account_intelligence
+    handler: normalize_account_record
+    description: "Normalize account data from any source into canonical schema (READ-ONLY)"
+    sandbox: py-slim
+    scopes: [sales, data]
+    network_allowed: false
+    classification: read_only
+    requires_approval: false
+    cost: 0.5
+    latency: 0.3
+    
+  - id: sales.score_account_fit
+    name: "Score Account Fit"
+    module: cuga.modular.tools.sales.account_intelligence
+    handler: score_account_fit
+    description: "Score account fit against Ideal Customer Profile (READ-ONLY)"
+    sandbox: py-slim
+    scopes: [sales, analysis]
+    network_allowed: false
+    classification: read_only
+    requires_approval: false
+    cost: 1.0
+    latency: 0.5
+    
+  - id: sales.retrieve_account_signals
+    name: "Retrieve Account Signals"
+    module: cuga.modular.tools.sales.account_intelligence
+    handler: retrieve_account_signals
+    description: "Retrieve buying signals for account (STUB - adapter integration in Phase 4)"
+    sandbox: py-slim
+    scopes: [sales, signals]
+    network_allowed: false  # Will be true with adapters in Phase 4
+    classification: read_only
+    requires_approval: false
+    cost: 2.0
+    latency: 1.0
+    
+  # Domain 5: Qualification & Deal Progression
+  - id: sales.qualify_opportunity
+    name: "Qualify Opportunity"
+    module: cuga.modular.tools.sales.qualification
+    handler: qualify_opportunity
+    description: "Qualify opportunity using BANT/MEDDICC framework (advisory only)"
+    sandbox: py-slim
+    scopes: [sales, qualification]
+    network_allowed: false
+    classification: read_only
+    requires_approval: false
+    cost: 1.5
+    latency: 0.5
+    
+  - id: sales.assess_deal_risk
+    name: "Assess Deal Risk"
+    module: cuga.modular.tools.sales.qualification
+    handler: assess_deal_risk
+    description: "Assess deal risk factors and close probability (advisory only)"
+    sandbox: py-slim
+    scopes: [sales, risk_analysis]
+    network_allowed: false
+    classification: read_only
+    requires_approval: false
+    cost: 1.5
+    latency: 0.5
+
+entries:
+  - id: langflow
+    protocol: http
+    ref: ${LANGFLOW_HOST:-http://langflow:7860}
+    sandbox: orchestrator
+    scopes: [orchestrator, control]
+    env:
+      LANGFLOW_API_KEY: '${LANGFLOW_API_KEY:?}'
+    mounts: []
+  - id: altk
+    protocol: http
+    ref: ${ALTK_HOST:-http://altk:8080}
+    sandbox: orchestrator
+    scopes: [orchestrator, control]
+    env:
+      ALTK_TOKEN: '${ALTK_TOKEN:?}'
+    mounts: []
+
+  - id: mcp.e2b
+    sandbox: py-full
+    ref: docker://e2b
+    scopes: [exec]
+    env:
+      E2B_API_KEY: '${E2B_API_KEY:?}'
+    mounts: [/workdir:ro, /workdir/output:rw]
+  - id: mcp.docker
+    sandbox: py-full
+    ref: docker://sandbox
+    scopes: [exec]
+    mounts: [/workdir:ro, /workdir/output:rw]
+  - id: mcp.fs
+    ref: docker://filesystem
+    scopes: [fs]
+    mounts: [/workspace:ro, /workspace/output:rw]
+  - id: mcp.fastfs
+    ref: docker://fast-filesystem-mcp
+    scopes: [fs]
+    mounts: [/workspace:ro, /workspace/output:rw]
+  - id: mcp.llmcontext
+    ref: docker://llm-context
+    scopes: [context]
+    mounts: [/workspace/output:rw]
+  - id: mcp.filestash
+    sandbox: py-full
+    ref: docker://filestash
+    scopes: [backup]
+    mounts: [/workspace/output:rw]
+  - id: mcp.backup
+    sandbox: py-full
+    ref: docker://backup
+    scopes: [backup]
+    mounts: [/workspace/output:rw]
+  - id: mcp.browser
+    sandbox: node-full
+    ref: docker://browser
+    scopes: [web]
+    env:
+      BROWSER_API_KEY: '${BROWSER_API_KEY:-}'
+    mounts: []
+  - id: mcp.search
+    sandbox: node-slim
+    ref: docker://search
+    scopes: [web]
+    env:
+      SEARCH_API_KEY: '${SEARCH_API_KEY:-}'
+    mounts: []
+  - id: mcp.snscrape
+    sandbox: py-full
+    ref: docker://snscrape
+    scopes: [social]
+    env: {}
+    mounts: []
+    # license: GPL-3 (sandboxed)
+  - id: mcp.newspaper
+    sandbox: py-full
+    ref: docker://newspaper4k
+    scopes: [news]
+    mounts: []
+  - id: mcp.git
+    ref: docker://git
+    scopes: [vcs]
+    mounts: [/workspace/repos:rw]
+  - id: mcp.github
+    ref: docker://github
+    scopes: [vcs]
+    env:
+      GITHUB_TOKEN: '${GITHUB_TOKEN:?}'
+    mounts: []
+  - id: mcp.gitlab
+    ref: docker://gitlab
+    scopes: [vcs]
+    env:
+      GITLAB_TOKEN: '${GITLAB_TOKEN:?}'
+    mounts: []
+  - id: mcp.gitingest
+    ref: docker://gitingest
+    scopes: [vcs]
+    mounts: [/workspace/repos:ro]
+  - id: mcp.phabricator
+    ref: docker://phabricator
+    scopes: [vcs]
+    env:
+      PHAB_TOKEN: '${PHAB_TOKEN:-}'
+    mounts: []
+
+  - id: mcp.crypto
+    tier: 2
+    enabled: false
+    sandbox: py-full
+    ref: docker://crypto
+    scopes: [finance]
+    env:
+      CRYPTO_API_KEY: '${CRYPTO_API_KEY:-}'
+    mounts: []
+  - id: mcp.finance
+    tier: 2
+    enabled: false
+    sandbox: py-full
+    ref: docker://finance
+    scopes: [finance]
+    env:
+      FIN_API_KEY: '${FIN_API_KEY:-}'
+    mounts: []
+  - id: mcp.wordpress
+    tier: 2
+    enabled: false
+    sandbox: node-full
+    ref: docker://wordpress
+    scopes: [cms]
+    env:
+      WP_TOKEN: '${WP_TOKEN:-}'
+    mounts: [/workspace/output:rw]
+  - id: mcp.social
+    tier: 2
+    enabled: false
+    sandbox: node-full
+    ref: docker://social
+    scopes: [social]
+    mounts: []
+  - id: mcp.sqldb
+    tier: 2
+    enabled: false
+    sandbox: py-full
+    ref: docker://sql
+    scopes: [db]
+    env:
+      SQL_URL: '${SQL_URL:-}'
+    mounts: [/workspace/db:rw]
+  - id: mcp.vectordb
+    tier: 2
+    enabled: false
+    sandbox: py-full
+    ref: docker://vector
+    scopes: [vector]
+    env:
+      VECTOR_URL: '${VECTOR_URL:-}'
+    mounts: [/workspace/vector:rw]
+  - id: observability.langfuse
+    tier: 2
+    enabled: false
+    protocol: http
+    sandbox: orchestrator
+    ref: ${LANGFUSE_HOST:-http://langfuse:3000}
+    scopes: [observability]
+    env:
+      LANGFUSE_PUBLIC_KEY: '${LANGFUSE_PUBLIC_KEY:-}'
+      LANGFUSE_SECRET_KEY: '${LANGFUSE_SECRET_KEY:-}'
+    mounts: []
+  - id: observability.langsmith
+    tier: 2
+    enabled: false
+    protocol: http
+    sandbox: orchestrator
+    ref: ${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
+    scopes: [observability]
+    env:
+      LANGCHAIN_API_KEY: '${LANGCHAIN_API_KEY:-}'
+      LANGCHAIN_PROJECT: '${LANGCHAIN_PROJECT:-}'
+    mounts: []

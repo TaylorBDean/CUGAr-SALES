@@ -1,0 +1,168 @@
+# IBM Sales Cloud Mock Data
+# Schema: IBM Watson Campaign Automation v2.1
+# Purpose: Realistic demo data for immediate showcase
+
+accounts:
+  - id: "ACC-001"
+    name: "Acme Corporation"
+    industry: "Technology"
+    employee_count: 5000
+    annual_revenue: 50000000
+    territory: "NA-WEST"
+    country: "USA"
+    state: "CA"
+    icp_score: 0.87
+    engagement_level: "high"
+    last_contact_date: "2025-12-15"
+    owner: "Sarah Johnson"
+    
+  - id: "ACC-002"
+    name: "TechStart Inc"
+    industry: "Technology"
+    employee_count: 250
+    annual_revenue: 12000000
+    territory: "NA-EAST"
+    country: "USA"
+    state: "NY"
+    icp_score: 0.92
+    engagement_level: "medium"
+    last_contact_date: "2025-12-10"
+    owner: "Mike Chen"
+    
+  - id: "ACC-003"
+    name: "Global Manufacturing"
+    industry: "Manufacturing"
+    employee_count: 10000
+    annual_revenue: 150000000
+    territory: "NA-CENTRAL"
+    country: "USA"
+    state: "IL"
+    icp_score: 0.45
+    engagement_level: "low"
+    last_contact_date: "2025-11-01"
+    owner: "Sarah Johnson"
+    
+  - id: "ACC-004"
+    name: "HealthTech Solutions"
+    industry: "Healthcare"
+    employee_count: 800
+    annual_revenue: 35000000
+    territory: "NA-WEST"
+    country: "USA"
+    state: "CA"
+    icp_score: 0.78
+    engagement_level: "high"
+    last_contact_date: "2025-12-20"
+    owner: "Lisa Park"
+    
+  - id: "ACC-005"
+    name: "FinServ Partners"
+    industry: "Finance"
+    employee_count: 1200
+    annual_revenue: 85000000
+    territory: "NA-EAST"
+    country: "USA"
+    state: "NY"
+    icp_score: 0.55
+    engagement_level: "medium"
+    last_contact_date: "2025-12-05"
+    owner: "Mike Chen"
+
+contacts:
+  - id: "CON-001"
+    account_id: "ACC-001"
+    first_name: "John"
+    last_name: "Smith"
+    title: "VP Sales"
+    email: "john.smith@acme.example.com"
+    phone: "+1-415-555-0101"
+    role: "champion"
+    seniority: "VP"
+    department: "Sales"
+    
+  - id: "CON-002"
+    account_id: "ACC-001"
+    first_name: "Emily"
+    last_name: "Chen"
+    title: "CFO"
+    email: "emily.chen@acme.example.com"
+    phone: "+1-415-555-0102"
+    role: "decision_maker"
+    seniority: "C-Level"
+    department: "Finance"
+    
+  - id: "CON-003"
+    account_id: "ACC-002"
+    first_name: "David"
+    last_name: "Park"
+    title: "Director of Sales Operations"
+    email: "david.park@techstart.example.com"
+    phone: "+1-212-555-0201"
+    role: "champion"
+    seniority: "Director"
+    department: "Sales Ops"
+    
+  - id: "CON-004"
+    account_id: "ACC-004"
+    first_name: "Sarah"
+    last_name: "Williams"
+    title: "CRO"
+    email: "sarah.williams@healthtech.example.com"
+    phone: "+1-415-555-0401"
+    role: "decision_maker"
+    seniority: "C-Level"
+    department: "Revenue"
+
+opportunities:
+  - id: "OPP-001"
+    account_id: "ACC-001"
+    name: "Acme - Sales Platform"
+    stage: "Negotiation"
+    amount: 150000
+    close_date: "2026-02-15"
+    probability: 0.75
+    owner: "Sarah Johnson"
+    created_date: "2025-11-01"
+    
+  - id: "OPP-002"
+    account_id: "ACC-002"
+    name: "TechStart - CRM Integration"
+    stage: "Proposal"
+    amount: 85000
+    close_date: "2026-01-30"
+    probability: 0.60
+    owner: "Mike Chen"
+    created_date: "2025-12-01"
+    
+  - id: "OPP-003"
+    account_id: "ACC-004"
+    name: "HealthTech - Enterprise Package"
+    stage: "Discovery"
+    amount: 200000
+    close_date: "2026-03-31"
+    probability: 0.40
+    owner: "Lisa Park"
+    created_date: "2025-12-15"
+
+signals:
+  - id: "SIG-001"
+    account_id: "ACC-001"
+    signal_type: "Job Posting - Sales Ops Manager"
+    confidence: 0.92
+    detected_date: "2025-12-10"
+    source: "LinkedIn"
+    
+  - id: "SIG-002"
+    account_id: "ACC-002"
+    signal_type: "Funding Announcement - Series B"
+    confidence: 0.88
+    detected_date: "2025-12-05"
+    source: "TechCrunch"
+    details: "$15M raised"
+    
+  - id: "SIG-003"
+    account_id: "ACC-004"
+    signal_type: "Executive Hire - VP Sales"
+    confidence: 0.85
+    detected_date: "2025-12-18"
+    source: "Company Press Release"

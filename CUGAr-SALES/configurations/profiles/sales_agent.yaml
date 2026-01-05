@@ -1,0 +1,40 @@
+permissions:
+  - read
+  - write
+  - execute
+
+operational_parameters:
+  max_leads_per_day: 100
+  max_outreach_attempts: 5
+  lead_scoring_threshold: 75
+
+data_sources:
+  crm:
+    enabled: true
+    type: salesforce
+  enrichment:
+    enabled: true
+    services:
+      - clearbit
+      - apollo
+      - zoominfo
+  outreach:
+    enabled: true
+    channels:
+      - email
+      - calendar
+
+conversation_memory:
+  enabled: true
+  type: vector_database
+  database: pinecone
+
+analytics:
+  enabled: true
+  tools:
+    - looker
+    - metabase
+
+human_in_the_loop:
+  enabled: true
+  escalation_threshold: high

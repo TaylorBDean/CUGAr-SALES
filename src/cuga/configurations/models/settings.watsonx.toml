@@ -1,0 +1,74 @@
+# Granite 4.0 Configuration
+# Model Variants:
+#   - granite-4-h-small: Balanced performance (default)
+#   - granite-4-h-micro: Lightweight, fast inference
+#   - granite-4-h-tiny: Minimal resource usage
+# 
+# See: https://www.ibm.com/docs/en/watsonx-as-a-service for model catalog
+
+[model]
+id = "granite-4-h-small"
+decoding_method = "greedy"
+max_new_tokens = 512
+min_new_tokens = 1
+
+[agent.task_decomposition.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+temperature = 0.0
+max_tokens = 16000
+
+[agent.shortlister.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+temperature = 0.0
+max_tokens = 16000
+
+[agent.planner.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+temperature = 0.0
+max_tokens = 16000
+
+[agent.chat.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+temperature = 0.0
+max_tokens = 16000
+
+[agent.plan_controller.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+temperature = 0.0
+max_tokens = 16000
+
+[agent.final_answer.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+api_version ="2024-08-06"
+temperature = 0.0
+max_tokens = 32000
+
+[agent.code.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+temperature = 0.0
+max_tokens = 16000
+
+[agent.code_planner.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+temperature = 0.0
+max_tokens = 16000
+
+[agent.qa.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+temperature = 0.0
+max_tokens = 16000
+
+[agent.action.model]
+platform = "watsonx"
+model_name = "granite-4-h-small"
+temperature = 0.0
+max_tokens = 2000

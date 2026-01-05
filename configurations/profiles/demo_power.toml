@@ -1,0 +1,18 @@
+[profiles.demo_power]
+fragments = [
+  "./mcp-foundation/registry/fragments/base.yaml",
+  "./mcp-foundation/registry/fragments/langflow.global.dev.yaml",
+  "./mcp-foundation/registry/fragments/openapi.trading.yaml",
+  "./mcp-foundation/registry/fragments/openapi.wordpress.yaml",
+  "../_shared/scrape_tweets.yaml",
+  "../_shared/extract_article.yaml",
+  "../_shared/crypto_wallet.yaml",
+  "../_shared/moon_agents.yaml",
+  "../_shared/vault_tools.yaml",
+]
+output = "./build/mcp_servers.demo_power.yaml"
+
+[langflow_prod_projects]
+trading = "${LF_TRADING_PROJECT_ID}"
+music = "${LF_MUSIC_PROJECT_ID}"
+wordpress = "${LF_WORDPRESS_PROJECT_ID}"

@@ -1,0 +1,76 @@
+---
+# ops/k8s/namespace.yaml
+# Namespace and RBAC for CUGAr services
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cugar
+  labels:
+    name: cugar
+    environment: production
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: cugar-quota
+  namespace: cugar
+spec:
+  hard:
+    requests.cpu: "20"
+    requests.memory: "40Gi"
+    limits.cpu: "40"
+    limits.memory: "80Gi"
+    persistentvolumeclaims: "10"
+    services.loadbalancers: "2"
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cugar-limits
+  namespace: cugar
+spec:
+  limits:
+  - max:
+      cpu: "8"
+      memory: "16Gi"
+    min:
+      cpu: "100m"
+      memory: "128Mi"
+    default:
+      cpu: "500m"
+      memory: "1Gi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "256Mi"
+    type: Container
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cuga-workspace
+  namespace: cugar
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: nfs
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cuga-repos
+  namespace: cugar
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: nfs

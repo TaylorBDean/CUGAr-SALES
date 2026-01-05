@@ -1,0 +1,348 @@
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: #f8fafc;
+  position: relative;
+}
+
+/* Welcome mode styles - no padding/margin, full screen, modern gradient */
+.app-layout.welcome-mode {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+}
+
+.app-layout.welcome-mode .main-layout {
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 42px;
+  padding-left: 20%;
+  padding-right: 20%;
+  background: linear-gradient(359deg, #e7f2ff, #ffffff);
+}
+
+@media (max-width: 1200px) {
+  .main-layout {
+    padding-left: 10%;
+    padding-right: 10%;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-layout {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+}
+
+@media (max-width: 640px) {
+  .main-layout {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+.chat-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  border-radius: 8px;
+}
+
+/* Welcome mode - make chat take full width */
+.app-layout.welcome-mode .chat-container {
+  border-radius: 0;
+}
+
+.chat-container .fullScreen {
+  height: 100%;
+  width: 100%;
+}
+
+/* Ensure chat content doesn't overflow */
+.chat-container > * {
+  max-width: 100%;
+  box-sizing: border-box;
+  height: 100%;
+  width: 100%;
+}
+
+/* Tour help button */
+.tour-help-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  animation: tourHelpPulse 2s ease-in-out infinite;
+}
+
+@keyframes tourHelpPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 24px rgba(102, 126, 234, 0.6);
+  }
+}
+
+.tour-help-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(102, 126, 234, 0.6);
+  animation: none;
+}
+
+.tour-help-button:active {
+  transform: scale(1.05);
+}
+
+@media (max-width: 640px) {
+  .tour-help-button {
+    width: 46px;
+    height: 46px;
+    bottom: 16px;
+    right: 16px;
+  }
+}
+
+/* Quick Actions FAB (Floating Action Button) */
+.quick-actions-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 32px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #0f62fe;
+  color: white;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 98, 254, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 900;
+}
+
+.quick-actions-fab:hover {
+  background: #0353e9;
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(15, 98, 254, 0.6);
+}
+
+.quick-actions-fab:active {
+  transform: scale(0.95);
+}
+
+/* Quick Actions Overlay */
+.quick-actions-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Quick Actions Modal */
+.quick-actions-modal {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 720px;
+  max-height: 85vh;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Backend Status Styles */
+.backend-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.backend-status.checking {
+  background: #e0e0e0;
+  color: #525252;
+}
+
+.backend-status.online {
+  background: #d0e2ff;
+  color: #0043ce;
+}
+
+.backend-status.offline {
+  background: #fff1f1;
+  color: #da1e28;
+}
+
+.backend-status .status-icon {
+  flex-shrink: 0;
+}
+
+.backend-status .status-icon.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.backend-status .status-text {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .quick-actions-fab {
+    width: 48px;
+    height: 48px;
+    bottom: 70px;
+    right: 20px;
+  }
+  
+  .quick-actions-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+}
+
+/* AGENTS.md Compliance Styles */
+
+/* Status Bar Wrapper with Budget and Controls */
+.status-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.budget-indicators {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex: 1;
+}
+
+.capability-status-toggle,
+.trace-viewer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.capability-status-toggle:hover,
+.trace-viewer-toggle:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+/* Capability Status Panel */
+.capability-status-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s;
+}
+
+.capability-status-panel {
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s;
+}
+
+/* Trace Viewer Panel */
+.trace-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s;
+}
+
+.trace-viewer-panel {
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s;
+}

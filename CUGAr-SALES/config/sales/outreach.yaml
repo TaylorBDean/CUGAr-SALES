@@ -1,0 +1,32 @@
+email_integration:
+  provider: "Gmail"  # or "Outlook"
+  api_key: "YOUR_API_KEY"
+  api_secret: "YOUR_API_SECRET"
+  redirect_uri: "YOUR_REDIRECT_URI"
+
+calendar_integration:
+  provider: "Gmail"  # or "Outlook"
+  api_key: "YOUR_API_KEY"
+  api_secret: "YOUR_API_SECRET"
+  redirect_uri: "YOUR_REDIRECT_URI"
+
+sequencing:
+  default_sequence:
+    - template_id: "welcome_email"
+      delay_days: 1
+    - template_id: "follow_up_email"
+      delay_days: 3
+    - template_id: "final_reminder_email"
+      delay_days: 7
+
+personalization:
+  enable_dynamic_content: true
+  default_variables:
+    - name
+    - company
+    - pain_point
+
+tracking:
+  enable_open_tracking: true
+  enable_click_tracking: true
+  tracking_pixel_url: "YOUR_TRACKING_PIXEL_URL"

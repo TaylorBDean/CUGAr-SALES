@@ -1,0 +1,52 @@
+observability:
+  # Enable observability collection
+  enabled: ${OBSERVABILITY_ENABLED:-true}
+  
+  # Auto-export events immediately (set false for batch mode)
+  auto_export: true
+  
+  # Event buffer size before forced flush
+  buffer_size: 1000
+  
+  # Exporters configuration
+  exporters:
+    # OpenTelemetry OTLP exporter
+    otlp:
+      enabled: ${OTEL_TRACES_EXPORTER:-otlp} != "none"
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4318}
+      service_name: ${OTEL_SERVICE_NAME:-cuga-agent}
+      headers: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+    
+    # Console exporter (stdout)
+    console:
+      enabled: ${OTEL_TRACES_EXPORTER:-otlp} == "console"
+      pretty: false
+  
+  # Sampling configuration
+  sampling:
+    rate: ${OTEL_TRACES_SAMPLER_ARG:-1.0}
+    sampler: ${OTEL_TRACES_SAMPLER:-always_on}
+  
+  # PII redaction (always enabled)
+  redaction:
+    enabled: true
+    keys:
+      - secret
+      - token
+      - password
+      - api_key
+      - apikey
+      - credential
+      - auth
+      - authorization
+      - bearer
+
+# Legacy Langfuse/OpenInference config (deprecated, use OTEL)
+langfuse:
+  enabled: ${LANGFUSE_ENABLED:-false}
+  sampling_rate: 1.0
+  redact: true
+
+openinference:
+  enabled: ${OPENINFERENCE_ENABLED:-false}
+  sampling_rate: 0.3

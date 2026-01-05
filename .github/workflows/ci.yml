@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  # AGENTS.md § 4 & § 7: Security guardrails CI
+  safety-guardrails:
+    name: Security Guardrails (AGENTS.md)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+      
+      # Per AGENTS.md § 4 (Eval/Exec Elimination)
+      - name: Block unsafe eval() outside sandbox
+        run: |
+          if rg -n "\beval\s*\(" src/ --glob "!src/cuga/backend/tools_env/code_sandbox/**" --glob "!**test**.py"; then
+            echo "❌ AGENTS.md § 4 violation: Found eval() outside sandbox internals"
+            echo "   Direct eval() calls are FORBIDDEN in production code paths."
+            echo "   Use safe_eval_expression() from cuga.backend.tools_env.code_sandbox.safe_eval"
+            exit 1
+          fi
+          echo "✅ No unsafe eval() found"
+      
+      - name: Block unsafe exec() outside sandbox
+        run: |
+          if rg -n "\bexec\s*\(" src/ --glob "!src/cuga/backend/tools_env/code_sandbox/**" --glob "!**test**.py"; then
+            echo "❌ AGENTS.md § 4 violation: Found exec() outside sandbox internals"
+            echo "   Direct exec() calls are FORBIDDEN in production code paths."
+            echo "   Use safe_execute_code() from cuga.backend.tools_env.code_sandbox.safe_exec"
+            exit 1
+          fi
+          echo "✅ No unsafe exec() found"
+      
+      # Per AGENTS.md § Tool Contract (HTTP Client)
+      - name: Block raw HTTP calls (must use SafeClient)
+        run: |
+          if rg -n "(httpx\.Client\(|requests\.(get|post)\()" src/ --glob "!src/cuga/security/http_client.py" --glob "!**test**.py"; then
+            echo "❌ AGENTS.md § Tool Contract violation: Found raw HTTP calls"
+            echo "   All HTTP requests MUST use SafeClient from cuga.security.http_client"
+            exit 1
+          fi
+          echo "✅ All HTTP calls use SafeClient (or tests)"
+      
+      # Per AGENTS.md § 3 (Registry Hygiene): No :latest tags
+      - name: Block :latest container tags
+        run: |
+          if grep -E "image:.*:latest" ops/docker-compose.proposed.yaml; then
+            echo "❌ AGENTS.md § 3 violation: Found :latest tag in docker-compose"
+            echo "   All container images MUST be pinned (version or digest)"
+            exit 1
+          fi
+          echo "✅ All container images pinned"
+      
+      # Per AGENTS.md § Tool Contract (Secrets Management)
+      - name: Block hardcoded secrets
+        run: |
+          if rg -i "(api[_-]?key|password|secret|token)\s*=\s*['\"](?!env|test|mock|example|dummy|fake|\$)[a-zA-Z0-9]{8}" src/ --glob "!**test**.py" --glob "!**fixture**.py"; then
+            echo "❌ AGENTS.md § Tool Contract violation: Found potential hardcoded secrets"
+            echo "   All credentials MUST be loaded from environment variables"
+            exit 1
+          fi
+          echo "✅ No hardcoded secrets found"
+
+  quality:
+    name: Lint, type check, and tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/uv-action@v4
+        with:
+          version: 'latest'
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+      - name: Lint
+        run: uv run ruff check .
+      - name: Type check
+        run: uv run mypy src
+      - name: Tests
+        run: uv run pytest --cov=src --cov-report=xml --cov-fail-under=80
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml-${{ matrix.python-version }}
+          path: coverage.xml
+
+  demo-smoke:
+    name: Demo + sandbox smoke tests
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/uv-action@v4
+        with:
+          version: 'latest'
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+      - name: Prepare Playwright browsers
+        run: uv run playwright install --with-deps chromium
+      - name: Smoke test LangGraph demo flow
+        run: uv run python examples/run_langgraph_demo.py --goal "demo smoke" --profile demo_power
+      - name: CLI ingest/query smoke test
+        run: uv run pytest tests/test_cli_end_to_end.py tests/test_tools_import_security.py

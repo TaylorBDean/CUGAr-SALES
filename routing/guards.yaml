@@ -1,0 +1,202 @@
+# Production Routing Guard Configuration
+# 
+# This file defines routing policies for production deployments with security-first defaults.
+# All policies must comply with AGENTS.md guardrails and support deterministic, auditable routing.
+
+version: v1
+
+# Policy inheritance and defaults
+defaults:
+  input_policy: policies/default_input.yaml
+  tool_policy: policies/default_tool.yaml
+  output_policy: policies/default_output.yaml
+  audit_enabled: true
+  trace_propagation: required
+
+# Production Policy Profiles
+policies:
+  # Policy 1: Allowlist-Only (Restricted Production)
+  # Use for high-security environments with strict tool controls
+  allowlist_only:
+    description: "Strict allowlist-only policy for restricted production environments"
+    mode: deny-by-default
+    
+    input:
+      policy: validate
+      rules:
+        - type: schema_validation
+          schema_ref: input_schemas/production.json
+          reject_on_fail: true
+        - type: pii_detection
+          auto_redact: true
+          keys: [secret, token, password, api_key, credential, auth, authorization, bearer]
+        - type: size_limit
+          max_bytes: 1048576  # 1MB
+          reject_on_exceed: true
+    
+    tool:
+      policy: allowlist
+      rules:
+        - type: module_allowlist
+          allowed_modules:
+            - cuga.modular.tools.filesystem
+            - cuga.modular.tools.search
+            - cuga.modular.tools.analysis
+            - cuga.modular.tools.memory
+          reject_others: true
+        - type: capability_check
+          required_scopes: [fs, context]
+          deny_scopes: [exec, web, social]
+        - type: budget_enforcement
+          budget_ceiling: 100
+          escalation_max: 2
+          policy: block  # Hard block on budget exceed
+        - type: sandbox_enforcement
+          allowed_sandboxes: [py-slim, orchestrator]
+          deny_sandboxes: [py-full, node-full]
+      
+      approval_gates: []  # No human gates in allowlist-only mode
+    
+    output:
+      policy: sanitize
+      rules:
+        - type: pii_redaction
+          keys: [secret, token, password, api_key, credential, auth, authorization, bearer]
+          recursive: true
+        - type: size_limit
+          max_bytes: 2097152  # 2MB
+          truncate_on_exceed: true
+        - type: format_validation
+          allowed_formats: [json, text, markdown]
+
+  # Policy 2: Allowlist + Human-in-the-Loop (HITL) Checkpoints
+  # Use for sensitive operations requiring human approval
+  allowlist_hitl:
+    description: "Allowlist with mandatory human approval for high-impact operations"
+    mode: deny-by-default
+    
+    input:
+      policy: validate
+      rules:
+        - type: schema_validation
+          schema_ref: input_schemas/production.json
+          reject_on_fail: true
+        - type: pii_detection
+          auto_redact: true
+          keys: [secret, token, password, api_key, credential, auth, authorization, bearer]
+        - type: intent_classification
+          flag_high_risk: true
+          high_risk_keywords: [delete, remove, drop, truncate, destroy, wipe]
+    
+    tool:
+      policy: allowlist_with_approval
+      rules:
+        - type: module_allowlist
+          allowed_modules:
+            - cuga.modular.tools.filesystem
+            - cuga.modular.tools.search
+            - cuga.modular.tools.analysis
+            - cuga.modular.tools.memory
+            - cuga.modular.tools.web
+            - cuga.modular.tools.git
+          reject_others: true
+        - type: capability_check
+          required_scopes: [fs, context, vcs]
+          deny_scopes: [exec]  # Deny code execution in HITL mode
+        - type: budget_enforcement
+          budget_ceiling: 200
+          escalation_max: 3
+          policy: warn  # Warn but allow with approval
+        - type: sandbox_enforcement
+          allowed_sandboxes: [py-slim, py-full, node-slim, orchestrator]
+          require_readonly_mounts: true
+      
+      approval_gates:
+        - type: hito  # Human-in-the-oven (time-delayed approval)
+          trigger: budget_warning
+          delay_seconds: 30
+          auto_approve_after: false
+        
+        - type: hitl  # Human-in-the-loop (explicit approval)
+          trigger: high_impact_operation
+          conditions:
+            - operation_type: [write, delete, modify]
+            - capability: [fs, vcs, db]
+          approval_timeout: 300  # 5 minutes
+          fallback_action: reject
+          approvers:
+            - role: operator
+            - role: admin
+          notification:
+            channels: [slack, email]
+            urgency: high
+        
+        - type: hitl
+          trigger: budget_escalation
+          conditions:
+            - budget_exceeded: true
+            - escalation_level: [2, 3]
+          approval_timeout: 600  # 10 minutes
+          fallback_action: reject
+          approvers:
+            - role: finance_admin
+            - role: platform_admin
+    
+    output:
+      policy: sanitize_and_audit
+      rules:
+        - type: pii_redaction
+          keys: [secret, token, password, api_key, credential, auth, authorization, bearer]
+          recursive: true
+        - type: audit_logging
+          log_level: info
+          include_payload: true
+          include_trace: true
+        - type: size_limit
+          max_bytes: 5242880  # 5MB
+          truncate_on_exceed: true
+
+# Observability and Audit Configuration
+observability:
+  emit_events:
+    - approval_requested
+    - approval_received
+    - approval_timeout
+    - approval_denied
+    - budget_warning
+    - budget_exceeded
+    - policy_violation
+    - route_decision
+  
+  golden_signals:
+    - success_rate
+    - approval_wait_time
+    - budget_utilization
+    - policy_violation_rate
+  
+  export:
+    otel_enabled: true
+    otel_endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    prometheus_enabled: true
+    langfuse_enabled: ${LANGFUSE_PUBLIC_KEY:-false}
+
+# Routing Authority Configuration
+routing:
+  authority: RoutingAuthority
+  policies:
+    - round_robin
+    - capability_based
+    - load_balanced
+  
+  decision_audit:
+    backend: sqlite
+    path: ${AUDIT_DB_PATH:-./audit.db}
+    retention_days: 90
+
+# Legacy policy references (for backwards compatibility)
+input:
+  default: policies/default_input.yaml
+tool:
+  default: policies/default_tool.yaml
+output:
+  default: policies/default_output.yaml

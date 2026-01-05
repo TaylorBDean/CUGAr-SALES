@@ -1,0 +1,159 @@
+# Governance Capability Map for MCP/OpenAPI Tools
+# Defines action types, approval requirements, and tenant restrictions per tool
+
+capabilities:
+  # Communication tools
+  slack_send_message:
+    action_type: write
+    requires_approval: true
+    approval_timeout_seconds: 300
+    allowed_tenants: ["marketing", "support", "sales"]
+    max_rate_per_minute: 10
+    metadata:
+      description: "Send message to Slack channel"
+      risk_level: "medium"
+  
+  email_send:
+    action_type: write
+    requires_approval: true
+    approval_timeout_seconds: 600
+    allowed_tenants: ["marketing", "support"]
+    max_rate_per_minute: 5
+    metadata:
+      description: "Send email via SMTP"
+      risk_level: "medium"
+  
+  twilio_sms:
+    action_type: write
+    requires_approval: true
+    approval_timeout_seconds: 300
+    allowed_tenants: ["marketing", "support"]
+    max_rate_per_minute: 20
+    metadata:
+      description: "Send SMS via Twilio"
+      risk_level: "medium"
+  
+  # Data operations
+  file_read:
+    action_type: read
+    requires_approval: false
+    allowed_tenants: []  # All tenants
+    max_rate_per_minute: 100
+    metadata:
+      description: "Read file contents"
+      risk_level: "low"
+  
+  file_write:
+    action_type: write
+    requires_approval: true
+    approval_timeout_seconds: 180
+    allowed_tenants: ["engineering", "data_science"]
+    max_rate_per_minute: 20
+    metadata:
+      description: "Write or update file"
+      risk_level: "medium"
+  
+  file_delete:
+    action_type: delete
+    requires_approval: true
+    approval_timeout_seconds: 600
+    allowed_tenants: ["engineering"]
+    max_rate_per_minute: 5
+    metadata:
+      description: "Delete file permanently"
+      risk_level: "high"
+  
+  database_query:
+    action_type: read
+    requires_approval: false
+    allowed_tenants: ["engineering", "data_science", "analytics"]
+    max_rate_per_minute: 50
+    metadata:
+      description: "Execute SELECT query"
+      risk_level: "low"
+  
+  database_mutate:
+    action_type: write
+    requires_approval: true
+    approval_timeout_seconds: 300
+    allowed_tenants: ["engineering"]
+    max_rate_per_minute: 10
+    metadata:
+      description: "Execute INSERT/UPDATE query"
+      risk_level: "high"
+  
+  # Financial operations
+  stock_order_place:
+    action_type: financial
+    requires_approval: true
+    approval_timeout_seconds: 120
+    allowed_tenants: ["trading"]
+    denied_tenants: ["marketing", "support"]
+    max_rate_per_minute: 5
+    metadata:
+      description: "Place stock trading order"
+      risk_level: "critical"
+  
+  payment_process:
+    action_type: financial
+    requires_approval: true
+    approval_timeout_seconds: 300
+    allowed_tenants: ["finance", "trading"]
+    max_rate_per_minute: 10
+    metadata:
+      description: "Process payment transaction"
+      risk_level: "critical"
+  
+  # Marketing tools
+  mailchimp_campaign:
+    action_type: write
+    requires_approval: true
+    approval_timeout_seconds: 600
+    allowed_tenants: ["marketing"]
+    denied_tenants: ["trading", "finance"]
+    max_rate_per_minute: 5
+    metadata:
+      description: "Create or send Mailchimp campaign"
+      risk_level: "medium"
+  
+  # External API calls
+  openapi_post:
+    action_type: external
+    requires_approval: true
+    approval_timeout_seconds: 300
+    allowed_tenants: []  # All tenants (filtered by tenant capability map)
+    max_rate_per_minute: 20
+    metadata:
+      description: "POST request to external OpenAPI endpoint"
+      risk_level: "medium"
+  
+  openapi_delete:
+    action_type: external
+    requires_approval: true
+    approval_timeout_seconds: 600
+    allowed_tenants: ["engineering"]
+    max_rate_per_minute: 5
+    metadata:
+      description: "DELETE request to external OpenAPI endpoint"
+      risk_level: "high"
+  
+  # WordPress operations
+  wordpress_post_create:
+    action_type: write
+    requires_approval: true
+    approval_timeout_seconds: 300
+    allowed_tenants: ["marketing", "content"]
+    max_rate_per_minute: 10
+    metadata:
+      description: "Create WordPress post"
+      risk_level: "medium"
+  
+  wordpress_post_delete:
+    action_type: delete
+    requires_approval: true
+    approval_timeout_seconds: 600
+    allowed_tenants: ["marketing"]
+    max_rate_per_minute: 5
+    metadata:
+      description: "Delete WordPress post"
+      risk_level: "high"

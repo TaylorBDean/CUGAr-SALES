@@ -1,0 +1,488 @@
+---
+# ops/k8s/mcp-services-deployment.yaml
+# Kubernetes deployment for MCP services (Tier 1 and Tier 2)
+
+# ============================================================================
+# Tier 1 Services (Always Enabled)
+# ============================================================================
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-filesystem
+  namespace: cugar
+  labels:
+    app: mcp-filesystem
+    tier: tier1
+    mcp-service: filesystem
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mcp-filesystem
+  template:
+    metadata:
+      labels:
+        app: mcp-filesystem
+        tier: tier1
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: filesystem
+        image: fastmcp/filesystem:v1.0.0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+          readOnly: true
+        - name: output
+          mountPath: /workspace/output
+          readOnly: false
+        livenessProbe:
+          exec:
+            command: ["echo", "ok"]
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command: ["echo", "ok"]
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: cuga-workspace
+      - name: output
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-filesystem
+  namespace: cugar
+spec:
+  selector:
+    app: mcp-filesystem
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-git
+  namespace: cugar
+  labels:
+    app: mcp-git
+    tier: tier1
+    mcp-service: vcs
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mcp-git
+  template:
+    metadata:
+      labels:
+        app: mcp-git
+        tier: tier1
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: git
+        image: fastmcp/git:v2.0.0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        volumeMounts:
+        - name: repos
+          mountPath: /workspace/repos
+          readOnly: false
+        livenessProbe:
+          exec:
+            command: ["git", "--version"]
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command: ["git", "--version"]
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: repos
+        persistentVolumeClaim:
+          claimName: cuga-repos
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-git
+  namespace: cugar
+spec:
+  selector:
+    app: mcp-git
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-browser-slim
+  namespace: cugar
+  labels:
+    app: mcp-browser-slim
+    tier: tier1
+    mcp-service: web-slim
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mcp-browser-slim
+  template:
+    metadata:
+      labels:
+        app: mcp-browser-slim
+        tier: tier1
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: browser
+        image: fastmcp/browser:v1.0.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: WEB_PROFILE
+          value: "node-slim"
+        envFrom:
+        - secretRef:
+            name: mcp-browser-secrets
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "2000m"
+            memory: "2Gi"
+        livenessProbe:
+          exec:
+            command: ["echo", "ok"]
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command: ["echo", "ok"]
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-browser-slim
+  namespace: cugar
+spec:
+  selector:
+    app: mcp-browser-slim
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+# ============================================================================
+# Tier 2 Services (Disabled by Default, Enabled on Demand)
+# ============================================================================
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observability-collector
+  namespace: cugar
+  labels:
+    app: observability-collector
+    tier: tier2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: observability-collector
+  template:
+    metadata:
+      labels:
+        app: observability-collector
+        tier: tier2
+    spec:
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector:0.91.0
+        imagePullPolicy: IfNotPresent
+        args:
+        - "--config=/etc/otel/config.yaml"
+        envFrom:
+        - configMapRef:
+            name: observability-config
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        volumeMounts:
+        - name: otel-config
+          mountPath: /etc/otel/config.yaml
+          subPath: config.yaml
+          readOnly: true
+        ports:
+        - name: otlp-grpc
+          containerPort: 4317
+          protocol: TCP
+        - name: otlp-http
+          containerPort: 4318
+          protocol: TCP
+        - name: metrics
+          containerPort: 8888
+          protocol: TCP
+        livenessProbe:
+          exec:
+            command: ["otelcol", "--version"]
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: metrics
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: otel-config
+        configMap:
+          name: otel-collector-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: observability-collector
+  namespace: cugar
+spec:
+  selector:
+    app: observability-collector
+  ports:
+  - name: otlp-grpc
+    port: 4317
+    targetPort: otlp-grpc
+  - name: otlp-http
+    port: 4318
+    targetPort: otlp-http
+  - name: metrics
+    port: 8888
+    targetPort: metrics
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vector-db
+  namespace: cugar
+  labels:
+    app: vector-db
+    tier: tier2
+spec:
+  serviceName: vector-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vector-db
+  template:
+    metadata:
+      labels:
+        app: vector-db
+        tier: tier2
+    spec:
+      containers:
+      - name: qdrant
+        image: qdrant/qdrant:v1.7.0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "2Gi"
+          limits:
+            cpu: "4000m"
+            memory: "8Gi"
+        ports:
+        - name: http
+          containerPort: 6333
+        - name: grpc
+          containerPort: 6334
+        volumeMounts:
+        - name: storage
+          mountPath: /qdrant/storage
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+      storageClassName: fast-ssd
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vector-db
+  namespace: cugar
+spec:
+  selector:
+    app: vector-db
+  ports:
+  - name: http
+    port: 6333
+    targetPort: http
+  - name: grpc
+    port: 6334
+    targetPort: grpc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: cugar
+  labels:
+    app: ollama
+    tier: tier2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+        tier: tier2
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:0.1.17
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: OLLAMA_KEEP_ALIVE
+          value: "24h"
+        resources:
+          requests:
+            cpu: "2000m"
+            memory: "8Gi"
+          limits:
+            cpu: "8000m"
+            memory: "16Gi"
+        ports:
+        - name: http
+          containerPort: 11434
+        volumeMounts:
+        - name: models
+          mountPath: /root/.ollama
+        livenessProbe:
+          httpGet:
+            path: /api/version
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/version
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: ollama-models
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: cugar
+spec:
+  selector:
+    app: ollama
+  ports:
+  - name: http
+    port: 11434
+    targetPort: http
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models
+  namespace: cugar
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd

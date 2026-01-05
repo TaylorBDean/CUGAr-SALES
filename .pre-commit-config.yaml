@@ -1,0 +1,48 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.4
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  
+  # AGENTS.md § 4 & § 7: Security guardrails
+  - repo: local
+    hooks:
+      # Per AGENTS.md § 4 (Eval/Exec Elimination): Block eval outside sandbox
+      - id: block-unsafe-eval
+        name: Block unsafe eval() outside sandbox (AGENTS.md § 4)
+        entry: bash -c 'if rg -n "\beval\s*\(" src/ --glob "!src/cuga/backend/tools_env/code_sandbox/**" --glob "!**test**.py" --glob "!**_test.py"; then echo "❌ Found eval() outside sandbox internals (AGENTS.md § 4)"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        always_run: true
+      
+      # Per AGENTS.md § 4 (Eval/Exec Elimination): Block exec outside sandbox
+      - id: block-unsafe-exec
+        name: Block unsafe exec() outside sandbox (AGENTS.md § 4)
+        entry: bash -c 'if rg -n "\bexec\s*\(" src/ --glob "!src/cuga/backend/tools_env/code_sandbox/**" --glob "!**test**.py" --glob "!**_test.py"; then echo "❌ Found exec() outside sandbox internals (AGENTS.md § 4)"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        always_run: true
+      
+      # Per AGENTS.md § Tool Contract (HTTP Client): Block raw httpx/requests
+      - id: block-raw-http
+        name: Block raw HTTP calls (must use SafeClient per AGENTS.md)
+        entry: bash -c 'if rg -n "(httpx\.Client\(|requests\.(get|post)\()" src/ --glob "!src/cuga/security/http_client.py" --glob "!**test**.py" --glob "!**_test.py"; then echo "❌ Found raw HTTP calls (use SafeClient per AGENTS.md § Tool Contract)"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        always_run: true

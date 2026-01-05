@@ -1,0 +1,77 @@
+# Adapter Configuration (Frontend API-Managed)
+#
+# This file is automatically created/updated by the frontend UI
+# via /api/adapters/{vendor}/configure endpoint.
+#
+# DO NOT edit manually - use frontend or API endpoints.
+#
+# Configuration Precedence:
+# 1. This file (highest priority)
+# 2. Environment variables (fallback)
+# 3. Mock mode (default)
+
+adapters:
+  # IBM Sales Cloud (Watson Campaign Automation)
+  ibm_sales_cloud:
+    mode: mock  # mock, live, or hybrid
+    credentials: {}
+      # Required for live mode:
+      # api_endpoint: https://api.ibm.com/watson-campaign-automation/v2.1
+      # api_key: sk-your-api-key-here
+      # tenant_id: your-tenant-id
+  
+  # Salesforce
+  salesforce:
+    mode: mock
+    credentials: {}
+      # Required for live mode:
+      # instance_url: https://yourinstance.salesforce.com
+      # client_id: your-connected-app-client-id
+      # client_secret: your-connected-app-secret
+      # username: your-username@company.com
+      # password: your-password-plus-security-token
+  
+  # HubSpot
+  hubspot:
+    mode: mock
+    credentials: {}
+      # Required for live mode:
+      # api_key: pat-na1-your-api-key
+  
+  # Pipedrive
+  pipedrive:
+    mode: mock
+    credentials: {}
+      # Required for live mode:
+      # api_key: your-api-key
+      # company_domain: yourcompany
+  
+  # ZoomInfo (enrichment)
+  zoominfo:
+    mode: mock
+    credentials: {}
+      # Required for live mode:
+      # api_key: your-api-key
+      # username: your-username
+  
+  # Clearbit (enrichment)
+  clearbit:
+    mode: mock
+    credentials: {}
+      # Required for live mode:
+      # api_key: sk_your-api-key
+  
+  # Apollo (enrichment)
+  apollo:
+    mode: mock
+    credentials: {}
+      # Required for live mode:
+      # api_key: your-api-key
+  
+  # 6sense (intent signals)
+  sixsense:
+    mode: mock
+    credentials: {}
+      # Required for live mode:
+      # api_key: your-api-key
+      # company_id: your-company-id

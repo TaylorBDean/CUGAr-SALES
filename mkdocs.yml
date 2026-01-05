@@ -1,0 +1,12 @@
+site_name: CUGA Agent
+nav:
+  - Home: README.md
+  - Getting Started: docs/getting_started.md
+  - Watsonx: docs/watsonx.md
+  - Langflow: docs/langflow.md
+  - Security: docs/security.md
+  - Sandboxing: docs/sandboxing.md
+  - Tools Registry: docs/tools_registry.md
+  - UI/UX: docs/uiux.md
+  - Plugins: docs/plugins.md
+  - Agents: docs/AGENTS.md

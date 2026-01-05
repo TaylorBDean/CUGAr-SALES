@@ -1,0 +1,201 @@
+---
+# ops/k8s/configmaps.yaml
+# ConfigMaps for CUGAr orchestrator and MCP services
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cuga-orchestrator-config
+  namespace: cugar
+  labels:
+    app: cuga-orchestrator
+data:
+  # Observability settings
+  OTEL_SERVICE_NAME: "cuga-orchestrator"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_METRICS_EXPORTER: "otlp"
+  OTEL_LOGS_EXPORTER: "otlp"
+  
+  # Budget settings (per AGENTS.md § Configuration Policy)
+  AGENT_BUDGET_CEILING: "100"
+  AGENT_ESCALATION_MAX: "2"
+  AGENT_BUDGET_POLICY: "warn"  # or "block"
+  
+  # Planner settings (per AGENTS.md § Planning Protocol)
+  PLANNER_MAX_STEPS: "50"  # Clamped to 1..50
+  MODEL_TEMPERATURE: "0.7"  # Clamped to 0..2
+  
+  # Feature flags
+  CUGA_STRICT_CONFIG: "1"
+  CUGA_PROFILE_SANDBOX: "py_slim"
+  
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-config
+  namespace: cugar
+data:
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://observability-collector:4318"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: cugar
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    
+    processors:
+      batch:
+        timeout: 10s
+        send_batch_size: 1024
+      
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+      
+      # PII redaction per AGENTS.md § Audit / Trace Semantics
+      attributes:
+        actions:
+        - key: secret
+          action: delete
+        - key: token
+          action: delete
+        - key: password
+          action: delete
+        - key: api_key
+          action: delete
+        - key: credential
+          action: delete
+    
+    exporters:
+      # Console exporter (offline-first per AGENTS.md)
+      logging:
+        loglevel: info
+      
+      # OTLP exporter (optional, for external backends)
+      otlp:
+        endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT}"
+        compression: gzip
+      
+      # Prometheus exporter
+      prometheus:
+        endpoint: 0.0.0.0:8888
+    
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch, attributes]
+          exporters: [logging, otlp]
+        
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [logging, prometheus]
+        
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch, attributes]
+          exporters: [logging]
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cuga-registry
+  namespace: cugar
+data:
+  registry.yaml: |
+    # CUGAr Tool Registry (Tier 1 defaults enabled, Tier 2 disabled)
+    # Per AGENTS.md § Registry Hygiene
+    
+    tools:
+      # Tier 1 - Always enabled
+      - name: filesystem
+        enabled: true
+        tier: 1
+        sandbox_profile: "py_slim"
+        network_allowed: false
+        risk_tier: "READ"
+        budget_cost: 0.001
+      
+      - name: git
+        enabled: true
+        tier: 1
+        sandbox_profile: "py_slim"
+        network_allowed: false
+        risk_tier: "WRITE"
+        budget_cost: 0.005
+      
+      - name: browser_slim
+        enabled: true
+        tier: 1
+        sandbox_profile: "node_slim"
+        network_allowed: true
+        risk_tier: "EXTERNAL"
+        budget_cost: 0.01
+      
+      # Tier 2 - Disabled by default
+      - name: observability
+        enabled: false
+        tier: 2
+        sandbox_profile: "orchestrator"
+        network_allowed: true
+        risk_tier: "EXTERNAL"
+        budget_cost: 0.0
+      
+      - name: vector_db
+        enabled: false
+        tier: 2
+        sandbox_profile: "py_full"
+        network_allowed: true
+        risk_tier: "WRITE"
+        budget_cost: 0.002
+      
+      - name: ollama
+        enabled: false
+        tier: 2
+        sandbox_profile: "py_full"
+        network_allowed: true
+        risk_tier: "EXTERNAL"
+        budget_cost: 0.0
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cuga-settings
+  namespace: cugar
+data:
+  settings.toml: |
+    [features]
+    local_sandbox = true
+    thoughts = true
+    chat = true
+    memory_provider = "mem0"
+    
+    [advanced_features]
+    registry = true
+    langfuse_tracing = false
+    tracker_enabled = true
+    lite_mode = false
+    enable_memory = false
+    enable_fact = false
+    local_sandbox = true
+    message_window_limit = 20
+    max_input_length = 50000
+    enable_web_search = false
+    
+    [eval_config]
+    headless = false

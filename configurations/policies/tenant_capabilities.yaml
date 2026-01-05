@@ -1,0 +1,148 @@
+# Tenant Capability Maps
+# Defines per-tenant tool access control and resource limits
+
+tenant_maps:
+  # Marketing team
+  marketing:
+    allowed_tools:
+      - slack_send_message
+      - email_send
+      - twilio_sms
+      - mailchimp_campaign
+      - wordpress_post_create
+      - wordpress_post_delete
+      - file_read
+      - database_query
+      - openapi_post
+    denied_tools:
+      - stock_order_place
+      - payment_process
+      - database_mutate
+      - file_delete
+    max_concurrent_calls: 15
+    budget_ceiling: 200
+    metadata:
+      description: "Marketing team with communication and content tools"
+      contact: "marketing@example.com"
+  
+  # Trading team
+  trading:
+    allowed_tools:
+      - stock_order_place
+      - payment_process
+      - database_query
+      - file_read
+      - file_write
+    denied_tools:
+      - slack_send_message
+      - mailchimp_campaign
+      - wordpress_post_create
+      - wordpress_post_delete
+    max_concurrent_calls: 20
+    budget_ceiling: 500
+    metadata:
+      description: "Trading team with financial operations"
+      contact: "trading@example.com"
+      compliance: "SOX, MiFID II"
+  
+  # Engineering team
+  engineering:
+    allowed_tools: []  # Empty = all tools allowed
+    denied_tools: []
+    max_concurrent_calls: 50
+    budget_ceiling: 1000
+    metadata:
+      description: "Engineering team with full access"
+      contact: "engineering@example.com"
+  
+  # Support team
+  support:
+    allowed_tools:
+      - slack_send_message
+      - email_send
+      - twilio_sms
+      - file_read
+      - database_query
+    denied_tools:
+      - file_delete
+      - database_mutate
+      - stock_order_place
+      - payment_process
+      - mailchimp_campaign
+    max_concurrent_calls: 10
+    budget_ceiling: 100
+    metadata:
+      description: "Customer support team with read-only data access"
+      contact: "support@example.com"
+  
+  # Data science team
+  data_science:
+    allowed_tools:
+      - database_query
+      - file_read
+      - file_write
+      - openapi_post
+    denied_tools:
+      - file_delete
+      - database_mutate
+      - stock_order_place
+      - payment_process
+    max_concurrent_calls: 30
+    budget_ceiling: 300
+    metadata:
+      description: "Data science team with analytics tools"
+      contact: "datascience@example.com"
+  
+  # Finance team
+  finance:
+    allowed_tools:
+      - payment_process
+      - database_query
+      - file_read
+      - file_write
+    denied_tools:
+      - slack_send_message
+      - mailchimp_campaign
+      - stock_order_place
+    max_concurrent_calls: 15
+    budget_ceiling: 400
+    metadata:
+      description: "Finance team with payment processing"
+      contact: "finance@example.com"
+      compliance: "SOX, PCI-DSS"
+  
+  # Content team
+  content:
+    allowed_tools:
+      - wordpress_post_create
+      - wordpress_post_delete
+      - file_read
+      - file_write
+      - database_query
+    denied_tools:
+      - stock_order_place
+      - payment_process
+      - database_mutate
+    max_concurrent_calls: 10
+    budget_ceiling: 150
+    metadata:
+      description: "Content creation and management team"
+      contact: "content@example.com"
+  
+  # Analytics team
+  analytics:
+    allowed_tools:
+      - database_query
+      - file_read
+      - openapi_post
+    denied_tools:
+      - file_delete
+      - database_mutate
+      - stock_order_place
+      - payment_process
+      - slack_send_message
+    max_concurrent_calls: 20
+    budget_ceiling: 250
+    metadata:
+      description: "Analytics team with read-only access"
+      contact: "analytics@example.com"
