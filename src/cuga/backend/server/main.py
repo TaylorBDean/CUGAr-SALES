@@ -644,6 +644,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/health")
+async def health() -> dict:
+    return {"status": "ok"}
+
 # Include AGENTS.md coordinator endpoints (orchestrator integration)
 try:
     from cuga.backend.api.routes import agents_router

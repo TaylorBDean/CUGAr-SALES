@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => {
   
   let options: ViteUserConfig = {
     plugins: [react()],
+    server: {
+      port: 3000,
+      strictPort: true,
+    },
     define: {
       FAKE_STREAM: JSON.stringify(fakeStream),
     },
