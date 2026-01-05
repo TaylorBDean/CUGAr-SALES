@@ -7,6 +7,51 @@ This changelog follows the guidance from [Keep a Changelog](https://keepachangel
 
 ## [vNext] - TBD
 
+### 🏠 Local Mode (Simplified Single-Process Deployment)
+
+**Added simplified deployment mode for solo developers and quick demos**:
+- ✅ **Single-Process Architecture**: Streamlit UI + agent orchestration in one process
+- ✅ **Zero Backend Setup**: No separate FastAPI server, no CORS configuration needed
+- ✅ **Quick Launch**: `./scripts/start-local.sh` or `cuga local ui` - one command to run
+- ✅ **Interactive CLI**: `cuga local chat` for terminal-based interaction
+- ✅ **Demo Mode**: `cuga local demo` for quick verification
+- ✅ **Comparison Tool**: `cuga local compare` shows local vs production modes
+- ✅ **Full Agent Features**: Planning, routing, execution, memory, RAG - all included
+- ✅ **Profile Support**: Enterprise/SMB/technical profiles in simple UI
+- ✅ **File Upload**: Document ingestion directly in Streamlit interface
+- ✅ **Execution Traces**: Full debugging visibility in UI
+
+**Files Added**:
+- `src/cuga/local_ui.py` - Streamlit-based single-process UI (326 lines)
+- `src/cuga/cli_local.py` - Local mode CLI commands (180 lines)
+- `scripts/start-local.sh` - Quick launch script
+- `scripts/compare-modes.sh` - Mode comparison helper
+- `docs/LOCAL_MODE.md` - Comprehensive local mode documentation
+
+**Files Updated**:
+- `src/cuga/cli.py` - Added `cuga local` command group
+- `pyproject.toml` - Added `local` optional dependency group with Streamlit
+- `README.md` - Added Local Mode section with usage examples
+- `QUICK_START.md` - Added mode selection guide
+
+**Architecture Change**:
+- Local Mode: 1 process, 1 port (8501), Streamlit UI
+- Production Mode: 2 processes, 2 ports (3000 + 8000), React + FastAPI
+
+**When to Use**:
+- **Local Mode**: Solo dev, learning, demos, quick testing
+- **Production Mode**: Teams, production deployment, enterprise scale
+
+**Guardrails Preserved**:
+- Same `AGENTS.md` compliance in both modes
+- Capability-first architecture maintained
+- Tool budgets and policies enforced
+- Memory and RAG work identically
+
+See `docs/LOCAL_MODE.md` for complete documentation and migration guide.
+
+---
+
 ### 🚀 External Data Feed Integration - 100% COMPLETE (Phases 1-4)
 
 This release delivers **complete external data adapter coverage** with 10 production-ready integrations, enabling comprehensive sales intelligence from CRM, enrichment, intent, and market data sources.

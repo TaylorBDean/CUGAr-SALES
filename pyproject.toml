@@ -45,6 +45,7 @@ evaluation = ["rapidfuzz"]
 vector-faiss = ["faiss-cpu>=1.7.4"]
 vector-chroma = ["chromadb>=0.5"]
 vector-qdrant = ["qdrant-client>=1.8"]
+local = ["streamlit>=1.30.0"]
 
 
 [project.urls]

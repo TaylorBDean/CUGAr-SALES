@@ -37,6 +37,14 @@ if settings.advanced_features.enable_memory:
 
     app.add_typer(memory_app, name="memory")
 
+# Add local mode commands (simplified single-process mode)
+try:
+    from cuga.cli_local import app as local_app
+    app.add_typer(local_app, name="local", help="Local single-process mode commands")
+except ImportError:
+    # Streamlit not installed - local mode unavailable
+    pass
+
 # Global variables to track running direct processes (registry/demo)
 direct_processes = {}
 shutdown_event = threading.Event()

@@ -5,7 +5,50 @@
 
 ---
 
-## 🚀 One-Command Launch
+## Choose Your Mode
+
+CUGAr-SALES supports two deployment modes:
+
+### 🏠 Local Mode (Simplified)
+**Best for**: Solo developers, learning, quick demos
+
+```bash
+# One command - everything in one process
+./scripts/start-local.sh
+
+# Or use CLI commands
+cuga local ui      # Web UI (Streamlit)
+cuga local chat    # Terminal chat
+cuga local demo    # Quick verification
+```
+
+**Features**:
+- ✅ Single process (no separate backend)
+- ✅ Streamlit UI on port 8501
+- ✅ Perfect for laptops and learning
+- ✅ No CORS, no WebSocket setup
+
+See [docs/LOCAL_MODE.md](docs/LOCAL_MODE.md) for details.
+
+### 🏢 Production Mode (Full Stack)
+**Best for**: Teams, production, enterprise deployment
+
+```bash
+# Multi-process with React UI
+./scripts/start-dev.sh
+```
+
+**Features**:
+- ⚙️ Separate FastAPI backend + React frontend
+- ⚙️ WebSocket streaming
+- ⚙️ Full-featured UI with real-time updates
+- ⚙️ Scales horizontally
+
+Continue reading for Production Mode setup →
+
+---
+
+## 🚀 Production Mode: One-Command Launch
 
 ```bash
 ./scripts/start-dev.sh

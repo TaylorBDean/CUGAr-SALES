@@ -206,6 +206,36 @@ npm run electron:build:linux    # AppImage & .deb
 
 ---
 
+## 🏠 Local Development Mode (Simplified Single-Process)
+
+For **solo developers** and **quick demos**, CUGAr now offers a **simplified single-process mode** that eliminates the need for separate backend and frontend processes:
+
+```bash
+# One-command setup
+uv pip install -e ".[local]"
+./scripts/start-local.sh
+
+# Or interactive terminal chat
+cuga local chat
+
+# Or compare modes
+cuga local compare
+```
+
+**Local Mode Features:**
+- ✅ **Single process** - Streamlit UI + agents together (no separate backend)
+- ✅ **One command** - `./scripts/start-local.sh` and you're running
+- ✅ **Perfect for learning** - Simplified setup, same agent capabilities
+- ✅ **Quick demos** - No infrastructure needed, runs on laptops
+
+**When to use Local vs Production:**
+- **Local Mode** 🏠: Solo dev, learning, demos → `./scripts/start-local.sh` (port 8501)
+- **Production Mode** 🏢: Teams, enterprise, scale → `./scripts/start-dev.sh` (ports 3000 + 8000)
+
+See [docs/LOCAL_MODE.md](docs/LOCAL_MODE.md) for complete documentation, troubleshooting, and migration guide.
+
+---
+
 ## Quickstart (Development)
 ```bash
 # 1) Install (Python >=3.10)
