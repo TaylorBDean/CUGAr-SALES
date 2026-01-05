@@ -11,6 +11,7 @@ Usage:
 import streamlit as st
 import json
 import uuid
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
@@ -25,6 +26,26 @@ from cuga.modular.agents import (
 from cuga.modular.config import AgentConfig
 from cuga.modular.memory import VectorMemory
 from cuga.modular.rag import RagLoader, RagRetriever
+
+# Import LLM client
+from cuga.llm import get_llm_client
+import os
+
+
+class LLMAdapter:
+    """Adapter to make the LLM client compatible with modular agent interface."""
+    def __init__(self, client):
+        self.client = client
+    
+    def generate(self, prompt: str, temperature: float = 0.0) -> str:
+        """Generate response using the LLM client."""
+        try:
+            messages = [{"role": "user", "content": prompt}]
+            response = self.client.chat(messages, temperature=temperature)
+            return response.content if hasattr(response, 'content') else str(response)
+        except Exception as e:
+            return f"Error generating response: {e}"
+
 
 # Configure Streamlit page
 st.set_page_config(
@@ -43,14 +64,34 @@ if "backend" not in st.session_state:
     st.session_state.backend = "local"
 if "memory" not in st.session_state:
     st.session_state.memory = VectorMemory(backend_name="local", profile="default")
+if "llm_client" not in st.session_state:
+    # Initialize LLM from environment configuration
+    try:
+        llm_client = get_llm_client()
+        llm_adapter = LLMAdapter(llm_client)
+        model_name = os.getenv('MODEL_NAME', 'default')
+        st.session_state.llm_client = llm_adapter
+        st.session_state.llm_model = model_name
+        st.session_state.llm_status = f"✅ Connected: {model_name}"
+    except Exception as e:
+        st.session_state.llm_client = None
+        st.session_state.llm_model = "none"
+        st.session_state.llm_status = f"❌ Error: {e}"
+
 if "coordinator" not in st.session_state:
     registry = build_default_registry()
+    config = AgentConfig.from_env()
+    
     planner = PlannerAgent(
         registry=registry, 
         memory=st.session_state.memory, 
-        config=AgentConfig()
+        config=config,
+        llm=st.session_state.llm_client
     )
-    worker = WorkerAgent(registry=registry, memory=st.session_state.memory)
+    worker = WorkerAgent(
+        registry=registry, 
+        memory=st.session_state.memory
+    )
     st.session_state.coordinator = CoordinatorAgent(
         planner=planner, 
         workers=[worker], 
@@ -61,6 +102,13 @@ if "coordinator" not in st.session_state:
 with st.sidebar:
     st.title("🎯 CUGAr-SALES")
     st.caption("Local Single-Process Mode")
+    
+    # LLM Status
+    if "llm_status" in st.session_state:
+        if "✅" in st.session_state.llm_status:
+            st.success(st.session_state.llm_status)
+        else:
+            st.error(st.session_state.llm_status)
     
     st.divider()
     
@@ -197,14 +245,16 @@ for message in st.session_state.messages:
         # Show execution details for assistant messages
         if message["role"] == "assistant" and "trace" in message:
             with st.expander("🔍 Execution Details"):
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Steps", len(message.get("trace", {}).get("steps", [])))
-                with col2:
-                    duration = message.get("trace", {}).get("duration_ms", 0)
-                    st.metric("Duration", f"{duration}ms")
-                with col3:
                     st.metric("Trace ID", message.get("trace_id", "N/A")[:8])
+                with col2:
+                    trace_data = message.get("trace", {})
+                    if isinstance(trace_data, dict):
+                        steps = trace_data.get("steps", [])
+                        st.metric("Steps", len(steps) if isinstance(steps, list) else 0)
+                    else:
+                        st.metric("Steps", "N/A")
                 
                 st.json(message["trace"])
 
@@ -235,23 +285,24 @@ if prompt := st.chat_input("What would you like help with?"):
                 with trace_placeholder.expander("🔍 Execution Details"):
                     st.caption(f"Trace ID: {trace_id}")
                     
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Steps", len(result.trace.get("steps", [])))
-                    with col2:
-                        duration = result.trace.get("duration_ms", 0)
-                        st.metric("Duration", f"{duration}ms")
-                    with col3:
-                        tools_used = [step.get("tool") for step in result.trace.get("steps", [])]
-                        st.metric("Tools Used", len(set(tools_used)))
+                    # Handle trace structure safely
+                    trace_data = result.trace if hasattr(result, 'trace') else {}
+                    if isinstance(trace_data, dict):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            steps = trace_data.get("steps", [])
+                            st.metric("Steps", len(steps) if isinstance(steps, list) else 0)
+                        with col2:
+                            duration = trace_data.get("duration_ms", "N/A")
+                            st.metric("Duration", f"{duration}ms" if duration != "N/A" else "N/A")
                     
-                    st.json(result.trace)
+                    st.json(trace_data)
                 
                 # Save to history
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": result.output,
-                    "trace": result.trace,
+                    "trace": trace_data,
                     "trace_id": trace_id
                 })
                 
