@@ -6,6 +6,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 import uuid
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,15 @@ class TraceEmitter:
         
         self.events.append(event_data)
         logger.info(f"Trace event emitted", extra=event_data)
+        
+        # Emit to WebSocket if available (non-blocking)
+        try:
+            from cuga.orchestrator.trace_websocket_bridge import emit_to_websocket
+            # Schedule WebSocket emission without blocking
+            asyncio.create_task(emit_to_websocket(self.trace_id, event_data))
+        except (ImportError, RuntimeError):
+            # WebSocket bridge not available or no event loop - OK for tests
+            pass
     
     def get_trace(self) -> List[Dict[str, Any]]:
         """

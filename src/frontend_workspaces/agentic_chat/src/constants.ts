@@ -19,7 +19,7 @@ export const RESPONSE_USER_PROFILE = {
 
 // Get the base URL for the backend API
 // In production (HF Spaces), use the current origin
-// In development, use localhost with port 7860 (default port)
+// In development, use localhost with port 8000 (main backend)
 export const getApiBaseUrl = (): string => {
   // If running in Hugging Face Spaces or production, use current origin
   if (typeof window !== 'undefined') {
@@ -31,14 +31,15 @@ export const getApiBaseUrl = (): string => {
     }
   }
   
-  // Default to localhost:7860 for local development
+  // Default to localhost:8000 for local development (main FastAPI backend)
+  // Port 7860 is for Langflow demo UI (optional, started with 'cuga start demo')
   // This can be overridden by setting REACT_APP_API_URL environment variable
   // Note: In browser, process.env is injected by webpack at build time
   if (typeof process !== 'undefined' && process?.env?.REACT_APP_API_URL) {
     return process.env.REACT_APP_API_URL;
   }
   
-  return 'http://localhost:7860';
+  return 'http://localhost:8000';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

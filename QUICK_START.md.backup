@@ -13,14 +13,12 @@
 
 **What happens:**
 1. ✅ Pre-flight validation (registry, env, imports, ports)
-2. ✅ Kills any stray processes (8000, 3000)
+2. ✅ Kills any stray processes (8000, 3000, 7860)
 3. ✅ Installs dependencies with frozen lockfiles
 4. ✅ Starts backend on `127.0.0.1:8000`
 5. ✅ Starts frontend on `localhost:3000`
 6. ✅ Verifies WebSocket streaming operational
 7. ✅ Opens browser to `http://localhost:3000`
-
-**Note:** Port 7860 (Langflow demo UI) is intentionally NOT killed. Start it separately with `cuga start demo` if needed.
 
 ---
 
