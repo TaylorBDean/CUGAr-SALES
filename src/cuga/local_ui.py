@@ -29,6 +29,7 @@ from cuga.modular.rag import RagLoader, RagRetriever
 
 # Import LLM client
 from cuga.llm import get_llm_client
+from cuga.llm.types import ChatMessage
 import os
 
 
@@ -37,14 +38,24 @@ class LLMAdapter:
     def __init__(self, client):
         self.client = client
     
-    def generate(self, prompt: str, temperature: float = 0.0) -> str:
+    def generate(self, prompt: str, temperature: float = 0.0, max_tokens: int = 500) -> str:
         """Generate response using the LLM client."""
         try:
-            messages = [{"role": "user", "content": prompt}]
+            # Use ChatMessage dataclass for proper formatting
+            messages = [ChatMessage(role="user", content=prompt)]
             response = self.client.chat(messages, temperature=temperature)
-            return response.content if hasattr(response, 'content') else str(response)
+            
+            # Handle different response types
+            if hasattr(response, 'content'):
+                return response.content
+            elif isinstance(response, str):
+                return response
+            else:
+                return str(response)
         except Exception as e:
-            return f"Error generating response: {e}"
+            import traceback
+            error_detail = traceback.format_exc()
+            return f"Error generating response: {str(e)}\n\nDetails: {error_detail}"
 
 
 # Configure Streamlit page
@@ -71,10 +82,12 @@ if "llm_client" not in st.session_state:
         llm_adapter = LLMAdapter(llm_client)
         model_name = os.getenv('MODEL_NAME', 'default')
         st.session_state.llm_client = llm_adapter
+        st.session_state.llm_wrapper = llm_adapter  # Add this for fallback
         st.session_state.llm_model = model_name
         st.session_state.llm_status = f"✅ Connected: {model_name}"
     except Exception as e:
         st.session_state.llm_client = None
+        st.session_state.llm_wrapper = None  # Add this for fallback
         st.session_state.llm_model = "none"
         st.session_state.llm_status = f"❌ Error: {e}"
 
@@ -278,8 +291,38 @@ if prompt := st.chat_input("What would you like help with?"):
                 # Execute coordinator
                 result = st.session_state.coordinator.dispatch(prompt, trace_id=trace_id)
                 
+                # Debug: Check what we got
+                response_text = result.output if result and hasattr(result, 'output') else None
+                
+                # Handle case where no steps were generated (conversational query)
+                if not response_text or str(response_text).strip() in ["", "None", "null"]:
+                    # Fall back to direct LLM query for conversational responses
+                    if st.session_state.llm_wrapper:
+                        try:
+                            system_prompt = """You are CUGAr-SALES, an AI sales assistant. You help with:
+- Sales operations and territory planning
+- Lead generation and prospecting  
+- Account research and intelligence
+- Email drafting and outreach
+- BANT/MEDDIC qualification
+- Pipeline analysis
+
+You have 10 data adapters (Salesforce, ZoomInfo, Clearbit, HubSpot, 6sense, Apollo, Pipedrive, Crunchbase, BuiltWith, IBM Sales Cloud) and can orchestrate multi-step workflows.
+
+Be helpful and professional."""
+                            
+                            llm_response = st.session_state.llm_wrapper.generate(
+                                prompt=f"{system_prompt}\n\nUser: {prompt}\n\nAssistant:",
+                                max_tokens=500
+                            )
+                            response_text = llm_response
+                        except Exception as llm_error:
+                            response_text = f"LLM Error: {llm_error}"
+                    else:
+                        response_text = "⚠️ No LLM configured. Please check your .env file."
+                
                 # Display result
-                message_placeholder.markdown(result.output)
+                message_placeholder.markdown(response_text or "❌ No response generated")
                 
                 # Show execution trace
                 with trace_placeholder.expander("🔍 Execution Details"):
@@ -301,7 +344,7 @@ if prompt := st.chat_input("What would you like help with?"):
                 # Save to history
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": result.output,
+                    "content": response_text or "No response",
                     "trace": trace_data,
                     "trace_id": trace_id
                 })

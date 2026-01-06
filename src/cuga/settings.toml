@@ -56,22 +56,23 @@ memory = 8888
 
 [llm]
 provider = "openai"
-model = "gpt-4o-mini"
-base_url = ""
-api_key = ""
+model = "ollama/granite4:tiny-h"
+base_url = "http://localhost:11434"
+api_key = "ollama"
 timeout_s = 60
 max_retries = 3
 
 [llm.primary]
 provider = "openai"
 base_url = "http://localhost:11434"
-model = "mistral"
-api_key = ""
+model = "ollama/granite4:tiny-h"
+api_key = "ollama"
 
 [llm.fallback]
 provider = "openai"
-model = "gpt-4o-mini"
-api_key = "${OPENAI_API_KEY}"
+model = "ollama/granite4:tiny-h"
+base_url = "http://localhost:11434"
+api_key = "ollama"
 
 [llm.policy]
 fallback_on_timeout = true
